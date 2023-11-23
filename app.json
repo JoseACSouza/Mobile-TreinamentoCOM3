@@ -1,0 +1,10 @@
+{
+  "expo": {
+    "name": "Treinamento-COM3-app",
+    "slug": "Treinamento-COM3-app",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
