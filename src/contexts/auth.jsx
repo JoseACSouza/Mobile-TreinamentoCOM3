@@ -1,12 +1,24 @@
 import { createContext, useMemo, useState } from 'react';
 import { User, logout } from '../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState({});
 
-  const logIn = async (email, password) => {
+  const _storeData = async (user) => {
+    try {
+      await AsyncStorage.setItem(
+        'user',
+        JSON.stringify(user),
+      );
+    } catch (error) {
+      //console.log('async storage:', error);
+    }
+  };
+
+  const logIn = async (email, password, remember = false) => {
     try {
       const u = await User(email, password);
       const authUser = {
@@ -14,20 +26,26 @@ export const AuthProvider = ({ children }) => {
         id: u.data.user.id,
         token: u.data.token,
       };
-      setUser(authUser);
+      if(!remember){
+        setUser(authUser);
+      } else {
+        await _storeData(authUser);
+        setUser(authUser);
+      }
       return authUser;
     } catch (error) {
-      setUser({
-        error: 'Usuário ou senha inválidos'
-      });
+        setUser({
+          error: 'Usuário ou senha inválidos'
+        });
     }
   }
 
   const logOut = async ()=> {
     try {
       await logout(user.token);
+      await AsyncStorage.removeItem('user');
     } catch (error) {
-      console.log(error.message);
+      //console.log(error.message);
     }
     setUser({});
   }
@@ -36,6 +54,7 @@ export const AuthProvider = ({ children }) => {
     user: user,
     logIn,
     logOut,
+    setUser,
   }), [user]);
 
 

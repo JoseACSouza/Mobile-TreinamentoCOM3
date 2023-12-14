@@ -2,6 +2,7 @@ import { View, TextInput, Button, Text } from "react-native";
 import { sendComment } from "../../services/api";
 import { useContext, useState } from "react";
 import { AuthContext } from "../../contexts/auth";
+import { database } from "../../database";
 
 
 export default NewComment = (props) => {
@@ -9,26 +10,42 @@ export default NewComment = (props) => {
   const [error, setError] = useState(false);
   const [newComment, setNewPost] = useState({
     "user_id": user.id,
-    "post_id": props.postId,
+    "post_id": +props.postId,
     content: '',
     storage: '',
   });
 
   const verifyAndSend = async () => {
+    console.log('teste');
     if (!newComment.content) {
-      setError(true);
-    } else {
-      try {
-        await sendComment(user.token, newComment);
-        props.handle();
-      } catch (error) {
-        console.log(error.message);
-      }
+      return setError(true);
     }
-
-  };
-
-
+    try {
+      const oi = await sendComment(user.token, newComment);
+      showToastWithGravity('Comentário criado com sucesso!');
+      console.log('response', oi);
+    } catch (error) {
+      if (error.message === 'Network request failed') {
+        try {
+          await database.write(async () => {
+            await database.get('commentaries').create(commentary => {
+              commentary.content = newComment.content,
+              commentary['post_id'] = `${newComment['post_id']}`,
+              commentary.storage = newComment.storage,
+              commentary.synced = false,
+              commentary['users_id'] = `${user.id}`,
+              commentary['users_name'] = user.name
+            });
+          })
+        } catch (error) {
+          console.log(error);
+        }
+      }
+    } finally {
+      props.navigation.push('Comentary', { postId: props.postId});
+    //  props.navigation.navigate('Posts');
+    }
+  }
   return (
     <View className="bg-sky-200 py-3">
       <View className="mx-2">
