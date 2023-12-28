@@ -39,7 +39,7 @@ export default CommentCard = ({comment, navigation}) => {
                     }
                 }
               } finally {
-                navigation.push('Comentary', { postId: comment['post_id']});
+                navigation.push('Comentary', { postId: comment['post_id'] ? comment['post_id'] : comment.post.id });
               }
             }
             }/>
